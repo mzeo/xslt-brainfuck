@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<?xml-stylesheet type="text/xsl" href="brainfuck.xsl"?>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<title>Brainfuck interpreter in xslt</title>
+		<style type="text/css">
+		</style>
+	</head>
+	<body>
+		<h1>Brainfuck interpreter in xslt</h1>
+
+		<h2>Echo</h2>
+		<p>
+			<bf:brainfuck xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+				<bf:input>Echo this</bf:input>
+				<bf:main><![CDATA[
+					,+[-.,+]
+				]]></bf:main>
+			</bf:brainfuck>
+		</p>
+
+		<h2>Hello world</h2>
+		<p>
+			<bf:brainfuck xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+				<bf:main><![CDATA[
+					+++++ +++++ [
+						> +++++ ++
+						> +++++ +++++
+						> +++
+						> +
+						<<<< -
+					]
+					> ++ .
+					> + .
+					+++++ ++ .
+					.
+					+++ .
+					> ++ .
+					<< +++++ +++++ +++++ .
+					> .
+					+++ .
+					- - - - - - .
+					- - - - - - - - .
+					> + .
+					> .
+				]]></bf:main>
+			</bf:brainfuck>
+		</p>
+
+		<!-- Recures to deep -->
+<!--
+		<h2>Rot 13</h2>
+		<p>
+			<bf:brainfuck xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+				<bf:input></bf:input>
+				<bf:main><![CDATA[
+-,+[
+	-[
+		>>++++[>++++++++<-]
+		<+<-[
+			>+>+>-[>>>]
+			<[[>+<-]>>+>]
+			<<<<<-
+		]
+	]>>>[-]+
+	>- -[-[<->+++[-] ] ]<[
+		++++++++++++<[
+			>-[>+>>]
+			>[+[<+>-]>+>>]
+			<<<<<-
+		]
+		>>[<+>-]
+		>[
+			-[
+				-<<[-]>>
+			]<<[<<->>-]>>
+		]<<[<<+>>-]
+	]
+	<[-]
+	<.[-]
+	<-,+
+]
+				]]></bf:main>
+			</bf:brainfuck>
+		</p>-->
+	</body>
+</html>
+
