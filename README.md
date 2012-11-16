@@ -1,4 +1,4 @@
-xstl-brainfuck
+xslt-brainfuck
 ==============
 
 Brainfuck interpreter in xslt.
