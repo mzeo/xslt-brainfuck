@@ -6,7 +6,7 @@
 		<!ENTITY encode-result "concat(floor($result div 64) mod 8, floor($result div 8) mod 8, $result mod 8, ',')">
 ]>
 
-<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+<xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
 
 	<!-- Setup output type -->
 	<xsl:output method="xml" version="1.0"

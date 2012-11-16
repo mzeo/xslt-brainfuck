@@ -17,7 +17,7 @@
 
 		<h2>Echo</h2>
 		<p>
-			<bf:brainfuck xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+			<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
 				<bf:input>Echo this</bf:input>
 				<bf:main><![CDATA[
 					,+[-.,+]
@@ -27,7 +27,7 @@
 
 		<h2>Hello world</h2>
 		<p>
-			<bf:brainfuck xmlns:bf="http://mzlair.se/xslbrainfuck.php">
+			<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
 				<bf:main><![CDATA[
 					+++++ +++++ [
 						> +++++ ++
