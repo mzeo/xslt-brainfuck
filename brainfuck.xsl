@@ -368,7 +368,7 @@
 
 			<xsl:otherwise>
 				<!-- assume 255 marks eof -->
-				<xsl:variable name="result" select="255"/>
+				<xsl:variable name="result" select="0"/>
 
 				<!-- Continue -->
 				<xsl:call-template name="bf:step">

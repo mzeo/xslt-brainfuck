@@ -20,7 +20,7 @@
 			<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
 				<bf:input>Echo this</bf:input>
 				<bf:main><![CDATA[
-					,+[-.,+]
+					,[.,]
 				]]></bf:main>
 			</bf:brainfuck>
 		</p>
