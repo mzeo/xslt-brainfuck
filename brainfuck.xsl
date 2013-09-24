@@ -59,7 +59,7 @@
 					<!-- Program counter, points at current instruction, 1 based -->
 					<xsl:with-param name="pc" select="0"/>
 					<!-- Memory as concatenated octaly encoded numbers -->
-					<xsl:with-param name="data" select="$null-32"/>
+					<xsl:with-param name="data" select="$null-128"/>
 					<!-- While stack -->
 					<xsl:with-param name="stack" select="''"/>
 					<!-- input pointer -->
@@ -69,6 +69,7 @@
 		</xsl:call-template>
 	</xsl:template>
 
+	<!-- Encodes all state as single string -->
 	<xsl:template name="bf:encode-state">
 		<xsl:param name="output" select="''"/>
 		<xsl:param name="pc"/>
@@ -88,6 +89,7 @@
 		<xsl:value-of select="&state-sep;"/>
 	</xsl:template>
 
+	<!-- Main driver loop -->
 	<xsl:template name="bf:run">
 		<xsl:param name="state"/>
 		<xsl:param name="i" select="0"/>
@@ -96,23 +98,64 @@
 
 		<xsl:variable name="next-state">
 			<!-- Start the step machine -->
-			<xsl:call-template name="bf:step">
-				<xsl:with-param name="pc" select="&state-pc;"/>
-				<xsl:with-param name="data" select="&state-data;"/>
-				<xsl:with-param name="stack" select="&state-stack;"/>
-				<xsl:with-param name="ip" select="&state-ip;"/>
+			<xsl:call-template name="bf:fib-step">
+				<xsl:with-param name="state" select="concat(&state-sep;, &state-output-rest;)"/>
+				<xsl:with-param name="n" select="$i"/>
 			</xsl:call-template>
 		</xsl:variable>
 
-		<xsl:if test="contains($next-state, &state-sep;)">
-			<xsl:call-template name="bf:run">
-				<xsl:with-param name="state" select="$next-state"/>
-				<xsl:with-param name="i" select="$i + 1"/>
-			</xsl:call-template>
-		</xsl:if>
+		<xsl:choose>
+			<!-- Should I continue? -->
+			<xsl:when test="contains($next-state, &state-sep;)">
+				<xsl:call-template name="bf:run">
+					<xsl:with-param name="state" select="$next-state"/>
+					<xsl:with-param name="i" select="$i + 1"/>
+				</xsl:call-template>
+			</xsl:when>
+			<xsl:otherwise>
+				<!-- return leftovers -->
+				<xsl:value-of select="$next-state"/>
+			</xsl:otherwise>
+		</xsl:choose>
 	</xsl:template>
 
-	<!-- Increase program counter, decode current instruction, excecute instruction -->
+	<!-- Take fib(n) numer of actual steps with recursion limit n + const -->
+	<xsl:template name="bf:fib-step">
+		<xsl:param name="state"/>
+		<xsl:param name="n" select="0"/>
+
+		<xsl:choose>
+			<!-- Recursion aborted -->
+			<xsl:when test="not(contains($state, &state-sep;))">
+				<xsl:value-of select="$state"/>
+			</xsl:when>
+			<xsl:when test="$n &lt; 2">
+				<xsl:value-of select="&state-output;"/>
+
+				<!-- Start the step machine -->
+				<xsl:call-template name="bf:step">
+					<xsl:with-param name="pc" select="&state-pc;"/>
+					<xsl:with-param name="data" select="&state-data;"/>
+					<xsl:with-param name="stack" select="&state-stack;"/>
+					<xsl:with-param name="ip" select="&state-ip;"/>
+				</xsl:call-template>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:variable name="next-state">
+					<xsl:call-template name="bf:fib-step">
+						<xsl:with-param name="state" select="$state"/>
+						<xsl:with-param name="n" select="$n - 2"/>
+					</xsl:call-template>
+				</xsl:variable>
+				<xsl:call-template name="bf:fib-step">
+					<xsl:with-param name="state" select="$next-state"/>
+					<xsl:with-param name="n" select="$n - 1"/>
+				</xsl:call-template>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
+
+	<!-- Return state for continued execution -->
 	<xsl:template name="bf:continue">
 		<xsl:param name="output" select="''"/>
 		<xsl:param name="pc"/>
@@ -120,7 +163,7 @@
 		<xsl:param name="stack"/>
 		<xsl:param name="ip"/>
 
-		<!-- encode state -->
+		<!-- Encode state -->
 		<xsl:call-template name="bf:encode-state">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="$data"/>
@@ -130,7 +173,7 @@
 		</xsl:call-template>
 	</xsl:template>
 
-	<!-- Increase program counter, decode current instruction, excecute instruction -->
+	<!-- Return nothing to signal program done -->
 	<xsl:template name="bf:break">
 	</xsl:template>
 
@@ -481,14 +524,26 @@
 				</xsl:call-template>
 			</xsl:when>
 
-			<xsl:otherwise>
-				<!-- assume 0 marks eos -->
-				<xsl:variable name="result" select="0"/>
+			<!-- Specific eof -->
+			<xsl:when test="bf:eof">
+				<!-- make sure configured eof in range -->
+				<xsl:variable name="result" select="((bf:eof[text()] mod &max-value;) + &max-value;) mod &max-value;"/>
 
 				<!-- Continue -->
 				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$pc"/>
 					<xsl:with-param name="data" select="concat(&encode-result;, $tail)"/>
+					<xsl:with-param name="stack" select="$stack"/>
+					<xsl:with-param name="ip" select="$ip + 1"/>
+				</xsl:call-template>
+			</xsl:when>
+
+			<!-- Do not change on eof -->
+			<xsl:otherwise>
+				<!-- Continue -->
+				<xsl:call-template name="bf:continue">
+					<xsl:with-param name="pc" select="$pc"/>
+					<xsl:with-param name="data" select="$data"/>
 					<xsl:with-param name="stack" select="$stack"/>
 					<xsl:with-param name="ip" select="$ip + 1"/>
 				</xsl:call-template>

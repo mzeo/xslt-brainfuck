@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+	 [
+		 <!ENTITY echo-program ",[.,]">
+		 <!ENTITY echo-input "Echo this!">
+
+		 <!ENTITY hello-world-program "<![CDATA[
+			++++++++++[>+++++++>++++++++++>+++
+			>+<<<<-]>++.>+.+++++++..+++.
+			>++.<<+++++++++++++++.>.+++.------.
+			--------.>+.>.]]>">
+
+		 <!ENTITY rot13-program "<![CDATA[
+			 -,+[ -[ >>++++[>++++++++<-] <+<-[ >+>+>-[>>>]
+			 <[[>+<-]>>+>] <<<<<- ] ]>>>[-]+ >--[-[<->+++[-]]]<[
+			 ++++++++++++<[ >-[>+>>] >[+[<+>-]>+>>] <<<<<- ] >>[<+>-]
+			 >[ -[ -<<[-]>> ]<<[<<->>-]>> ]<<[<<+>>-] ] <[-] <.[-] <-,+ ] ]]>">
+		 <!ENTITY rot13-input "Uv!">
+	]>
 
 <?xml-stylesheet type="text/xsl" href="brainfuck.xsl"?>
 
@@ -10,48 +27,106 @@
 	<head>
 		<title>Brainfuck interpreter in xslt</title>
 		<style type="text/css">
+			body {
+				background: #798
+			}
+			div {
+				max-width: 35em;
+				margin: auto;
+				padding: 1em;
+				background: #fff;
+				border-radius: 1em;
+			}
+			h1, h2, h3 {
+				text-shadow: 0.1em 0.1em #bcbebd;
+			}
+			.code {
+				font-family: monospace;
+				margin: 0em;
+				padding: 0.5em;
+				background: #eee;
+				border-radius: 0.3em;
+				border: 1px solid #aaa;
+			}
+			a {
+				text-shadow: 0.1em 0.1em #bcbebd;
+				position: relative;
+				top: -0.1em;
+				left: -0.1em;
+			}
+			a:hover {
+				text-shadow: 0em 0em;
+				position: relative;
+				top: 0em;
+				left: 0em;
+			}
 		</style>
 	</head>
 	<body>
-		<h1>Brainfuck interpreter in xslt</h1>
+		<div>
+			<h1>Brainfuck interpreter in xslt</h1>
+			<p>
+				Some one said this would be stupid, so I couldn't resist. It allows you to
+				embed brainfuck code in xhtml. It uses XSLT to evaluate the brainfuck code.
+			</p>
 
-		<h2>Echo</h2>
-		<p>
-			<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
-				<bf:input>Echo this</bf:input>
-				<bf:main><![CDATA[
-					,[.,]
-				]]></bf:main>
-			</bf:brainfuck>
-		</p>
+			<h2>Examples</h2>
+			<h3>Echo</h3>
+			<p>
+				Echos input, code asumes EOF is 0. EOS is configurable.
+			</p>
+			<h4>Code:</h4>
+			<p class="code">&echo-program;</p>
 
-		<h2>Hello world</h2>
-		<p>
-			<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
-				<bf:main><![CDATA[
-					+++++ +++++ [
-						> +++++ ++
-						> +++++ +++++
-						> +++
-						> +
-						<<<< -
-					]
-					> ++ .
-					> + .
-					+++++ ++ .
-					.
-					+++ .
-					> ++ .
-					<< +++++ +++++ +++++ .
-					> .
-					+++ .
-					- - - - - - .
-					- - - - - - - - .
-					> + .
-					> .
-				]]></bf:main>
-			</bf:brainfuck>
-		</p>
+			<h4>Input:</h4>
+			<p class="code">&echo-input;</p>
+
+			<h4>Output:</h4>
+			<p class="code">
+				<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
+					<bf:input>&echo-input;</bf:input>
+					<bf:eof>0</bf:eof>
+					<bf:main>
+						&echo-program;
+					</bf:main>
+				</bf:brainfuck>
+			</p>
+
+			<h3>Hello world</h3>
+			<p>
+				Example code from <a href="http://en.wikipedia.org/wiki/Brainfuck#Examples">Wikipedia</a>.
+				Outputs "Hello world!".
+			</p>
+
+			<h4>Code:</h4>
+			<p class="code">&hello-world-program;</p>
+
+			<h4>Output:</h4>
+			<p class="code">
+				<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
+					<bf:main>&hello-world-program;</bf:main>
+				</bf:brainfuck>
+			</p>
+
+			<h3>Rot13</h3>
+			<p>
+				Example code from <a href="http://en.wikipedia.org/wiki/Brainfuck#Examples">Wikipedia</a>.
+				Applies rot13 chiffer to input. <em>Note:</em> this one is slow, ony using short input.
+			</p>
+			<h4>Code:</h4>
+			<p class="code">&rot13-program;</p>
+
+			<h4>Input:</h4>
+			<p class="code">&rot13-input;</p>
+
+			<h4>Output:</h4>
+			<p class="code">
+				<bf:brainfuck xmlns:bf="https://github.com/mzeo/xslt-brainfuck">
+					<bf:input>&rot13-input;</bf:input>
+					<bf:main>&rot13-program;</bf:main>
+				</bf:brainfuck>
+			</p>
+		</div>
 	</body>
 </html>
 
