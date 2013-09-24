@@ -12,6 +12,19 @@
 	<!ENTITY decode-data-head "number(substring($data, 1, 1))*64+number(substring($data, 2, 1))*8+number(substring($data, 3, 1))">
 	<!-- Encode result variable as octal -->
 	<!ENTITY encode-result "concat(floor($result div 64) mod 8, floor($result div 8) mod 8, $result mod 8)">
+	<!-- State separator, used when serializing state -->
+	<!ENTITY state-sep "'&#x3002;'">
+	<!-- State decoders -->
+	<!ENTITY state-output "substring-before($state, &state-sep;)">
+	<!ENTITY state-output-rest "substring-after($state, &state-sep;)">
+	<!ENTITY state-pc "substring-before(&state-output-rest;, &state-sep;)">
+	<!ENTITY state-pc-rest "substring-after(&state-output-rest;, &state-sep;)">
+	<!ENTITY state-data "substring-before(&state-pc-rest;, &state-sep;)">
+	<!ENTITY state-data-rest "substring-after(&state-pc-rest;, &state-sep;)">
+	<!ENTITY state-stack "substring-before(&state-data-rest;, &state-sep;)">
+	<!ENTITY state-stack-rest "substring-after(&state-data-rest;, &state-sep;)">
+	<!ENTITY state-ip "substring-before(&state-stack-rest;, &state-sep;)">
+	<!ENTITY state-ip-rest "substring-after(&state-stack-rest;, &state-sep;)">
 ]>
 
 <!-- Here we go -->
@@ -40,16 +53,85 @@
 		<xsl:variable name="null-128" select="concat($null-32, $null-32, $null-32, $null-32)"/>
 
 		<!-- Start the interpretation -->
-		<xsl:call-template name="bf:step">
-			<!-- Program counter, points at current instruction, 1 based -->
-			<xsl:with-param name="pc" select="0"/>
-			<!-- Memory as concatenated octaly encoded numbers -->
-			<xsl:with-param name="data" select="$null-32"/>
-			<!-- While stack -->
-			<xsl:with-param name="stack" select="''"/>
-			<!-- input pointer -->
-			<xsl:with-param name="ip" select="1"/>
+		<xsl:call-template name="bf:run">
+			<xsl:with-param name="state">
+				<xsl:call-template name="bf:encode-state">
+					<!-- Program counter, points at current instruction, 1 based -->
+					<xsl:with-param name="pc" select="0"/>
+					<!-- Memory as concatenated octaly encoded numbers -->
+					<xsl:with-param name="data" select="$null-32"/>
+					<!-- While stack -->
+					<xsl:with-param name="stack" select="''"/>
+					<!-- input pointer -->
+					<xsl:with-param name="ip" select="1"/>
+				</xsl:call-template>
+			</xsl:with-param>
 		</xsl:call-template>
+	</xsl:template>
+
+	<xsl:template name="bf:encode-state">
+		<xsl:param name="output" select="''"/>
+		<xsl:param name="pc"/>
+		<xsl:param name="data"/>
+		<xsl:param name="stack"/>
+		<xsl:param name="ip"/>
+
+		<xsl:value-of select="$output"/>
+		<xsl:value-of select="&state-sep;"/>
+		<xsl:value-of select="$pc"/>
+		<xsl:value-of select="&state-sep;"/>
+		<xsl:value-of select="$data"/>
+		<xsl:value-of select="&state-sep;"/>
+		<xsl:value-of select="$stack"/>
+		<xsl:value-of select="&state-sep;"/>
+		<xsl:value-of select="$ip"/>
+		<xsl:value-of select="&state-sep;"/>
+	</xsl:template>
+
+	<xsl:template name="bf:run">
+		<xsl:param name="state"/>
+		<xsl:param name="i" select="0"/>
+
+		<xsl:value-of select="&state-output;"/>
+
+		<xsl:variable name="next-state">
+			<!-- Start the step machine -->
+			<xsl:call-template name="bf:step">
+				<xsl:with-param name="pc" select="&state-pc;"/>
+				<xsl:with-param name="data" select="&state-data;"/>
+				<xsl:with-param name="stack" select="&state-stack;"/>
+				<xsl:with-param name="ip" select="&state-ip;"/>
+			</xsl:call-template>
+		</xsl:variable>
+
+		<xsl:if test="contains($next-state, &state-sep;)">
+			<xsl:call-template name="bf:run">
+				<xsl:with-param name="state" select="$next-state"/>
+				<xsl:with-param name="i" select="$i + 1"/>
+			</xsl:call-template>
+		</xsl:if>
+	</xsl:template>
+
+	<!-- Increase program counter, decode current instruction, excecute instruction -->
+	<xsl:template name="bf:continue">
+		<xsl:param name="output" select="''"/>
+		<xsl:param name="pc"/>
+		<xsl:param name="data"/>
+		<xsl:param name="stack"/>
+		<xsl:param name="ip"/>
+
+		<!-- encode state -->
+		<xsl:call-template name="bf:encode-state">
+			<xsl:with-param name="pc" select="$pc"/>
+			<xsl:with-param name="data" select="$data"/>
+			<xsl:with-param name="stack" select="$stack"/>
+			<xsl:with-param name="ip" select="$ip"/>
+			<xsl:with-param name="output" select="$output"/>
+		</xsl:call-template>
+	</xsl:template>
+
+	<!-- Increase program counter, decode current instruction, excecute instruction -->
+	<xsl:template name="bf:break">
 	</xsl:template>
 
 	<!-- Increase program counter, decode current instruction, excecute instruction -->
@@ -69,6 +151,12 @@
 		<xsl:choose>
 			<!-- Bail en end of program -->
 			<xsl:when test="$pc &gt; string-length($main)">
+				<xsl:call-template name="bf:break">
+					<xsl:with-param name="pc" select="$pc"/>
+					<xsl:with-param name="data" select="$data"/>
+					<xsl:with-param name="stack" select="$stack"/>
+					<xsl:with-param name="ip" select="$ip"/>
+				</xsl:call-template>
 			</xsl:when>
 
 			<!-- Decode '>' -->
@@ -146,18 +234,9 @@
 				</xsl:call-template>
 			</xsl:when>
 
-			<xsl:when test="$op = '!'">
-				<xsl:call-template name="bf:step">
-					<xsl:with-param name="pc" select="$next-pc"/>
-					<xsl:with-param name="data" select="$data"/>
-					<xsl:with-param name="stack" select="$stack"/>
-					<xsl:with-param name="ip" select="$ip"/>
-				</xsl:call-template>
-			</xsl:when>
-
 			<!-- Skip unknown characters -->
 			<xsl:otherwise>
-				<xsl:call-template name="bf:step">
+				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$next-pc"/>
 					<xsl:with-param name="data" select="$data"/>
 					<xsl:with-param name="stack" select="$stack"/>
@@ -178,7 +257,7 @@
 		<xsl:variable name="tail-raw" select="substring($data, &encoded-width; + 1)"/>
 
 		<!-- Continue -->
-		<xsl:call-template name="bf:step">
+		<xsl:call-template name="bf:continue">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="concat($tail-raw, $head-raw)"/>
 			<xsl:with-param name="stack" select="$stack"/>
@@ -199,7 +278,7 @@
 		<xsl:variable name="tail-raw" select="substring($data, 1, string-length($data) - &encoded-width;)"/>
 
 		<!-- Continue -->
-		<xsl:call-template name="bf:step">
+		<xsl:call-template name="bf:continue">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="concat($head-raw, $tail-raw)"/>
 			<xsl:with-param name="stack" select="$stack"/>
@@ -219,7 +298,7 @@
 		<xsl:variable name="result" select="($head + 1) mod &max-value;" />
 
 		<!-- Continue -->
-		<xsl:call-template name="bf:step">
+		<xsl:call-template name="bf:continue">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="concat(&encode-result;, $tail)"/>
 			<xsl:with-param name="stack" select="$stack"/>
@@ -240,7 +319,7 @@
 		<xsl:variable name="result" select="($head + &max-value; - 1) mod &max-value;" />
 
 		<!-- Continue -->
-		<xsl:call-template name="bf:step">
+		<xsl:call-template name="bf:continue">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="concat(&encode-result;, $tail)"/>
 			<xsl:with-param name="stack" select="$stack"/>
@@ -270,7 +349,7 @@
 
 			<xsl:otherwise>
 				<!-- Continue -->
-				<xsl:call-template name="bf:step">
+				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$pc"/>
 					<xsl:with-param name="data" select="$data"/>
 					<xsl:with-param name="stack" select="concat(number($pc), ',', $stack)"/>
@@ -323,7 +402,7 @@
 
 			<xsl:when test="$op = ']' and $level = 1">
 				<!-- Continue -->
-				<xsl:call-template name="bf:step">
+				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$next-pc"/>
 					<xsl:with-param name="data" select="$data"/>
 					<xsl:with-param name="stack" select="$stack"/>
@@ -368,14 +447,14 @@
 		<xsl:param name="ip"/>
 
 		<xsl:variable name="head" select="&decode-data-head;" />
-		<xsl:value-of select="substring($ascii-table, $head + 1, 1)"/>
 
 		<!-- Continue -->
-		<xsl:call-template name="bf:step">
+		<xsl:call-template name="bf:continue">
 			<xsl:with-param name="pc" select="$pc"/>
 			<xsl:with-param name="data" select="$data"/>
 			<xsl:with-param name="stack" select="$stack"/>
 			<xsl:with-param name="ip" select="$ip"/>
+			<xsl:with-param name="output" select="substring($ascii-table, $head + 1, 1)"/>
 		</xsl:call-template>
 	</xsl:template>
 
@@ -394,7 +473,7 @@
 				<xsl:variable name="result" select="string-length(substring-before($ascii-table, $char))"/>
 
 				<!-- Continue -->
-				<xsl:call-template name="bf:step">
+				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$pc"/>
 					<xsl:with-param name="data" select="concat(&encode-result;, $tail)"/>
 					<xsl:with-param name="stack" select="$stack"/>
@@ -407,7 +486,7 @@
 				<xsl:variable name="result" select="0"/>
 
 				<!-- Continue -->
-				<xsl:call-template name="bf:step">
+				<xsl:call-template name="bf:continue">
 					<xsl:with-param name="pc" select="$pc"/>
 					<xsl:with-param name="data" select="concat(&encode-result;, $tail)"/>
 					<xsl:with-param name="stack" select="$stack"/>
